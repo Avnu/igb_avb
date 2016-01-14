@@ -25,12 +25,12 @@
 /*
  * NOTE: This is an AVB-customed version of the standard Intel igb
  * driver. This driver requires (4) tx-rx queues are enabled, with MSI-X.
- * Standard best-effort LAN traffic is directed to tx queue(3), leaving tx-queue(0) 
- * through tx-queue(2) on the Intel i210 available to be mapped into a 
+ * Standard best-effort LAN traffic is directed to tx queue(3), leaving tx-queue(0)
+ * through tx-queue(2) on the Intel i210 available to be mapped into a
  * user-space application and managed by the application.
  *
  * The driver includes the minimal AVB specific initialization code
- * to setup the queues. 
+ * to setup the queues.
  *
  * The application must map the register space into a user-space application.
  * then setup tx descriptor rings and packet buffers which the other queues
@@ -1570,7 +1570,8 @@ static void igb_configure(struct igb_adapter *adapter)
 	/* call igb_desc_unused which always leaves
 	 * at least 1 descriptor unused to make sure
 	 * next_to_use != next_to_clean */
-	for (i = 0; i < adapter->num_rx_queues; i++) {
+
+	for (i = 2; i < adapter->num_rx_queues; i++) { /* AVB specific */
 		struct igb_ring *ring = adapter->rx_ring[i];
 		igb_alloc_rx_buffers(ring, igb_desc_unused(ring));
 	}
@@ -2666,7 +2667,8 @@ static int igb_probe(struct pci_dev *pdev,
 	adapter->msg_enable = (1 << debug) - 1;
 
 	adapter->userpages = NULL;
-	adapter->uring_init = 0;
+	adapter->uring_tx_init = 0;
+	adapter->uring_rx_init = 0;
 #ifdef HAVE_PCI_ERS
 	err = pci_save_state(pdev);
 	if (err)
@@ -3776,6 +3778,9 @@ static void igb_setup_mrqc(struct igb_adapter *adapter)
 	}
 	igb_vmm_control(adapter);
 
+	/* AVB specific use queue 3 for all non-filtered packets */
+#define E1000_MRQC_ENABLE_DEF_Q3 (3 << 3)
+	mrqc = E1000_MRQC_ENABLE_DEF_Q3; /* AVB specific */
 	E1000_WRITE_REG(hw, E1000_MRQC, mrqc);
 }
 
@@ -4258,7 +4263,7 @@ static void igb_clean_all_rx_rings(struct igb_adapter *adapter)
 {
 	int i;
 
-	for (i = 0; i < adapter->num_rx_queues; i++)
+	for (i = 2; i < adapter->num_rx_queues; i++) /* AVB specific */
 		igb_clean_rx_ring(adapter->rx_ring[i]);
 }
 
@@ -7089,7 +7094,7 @@ static bool igb_clean_tx_irq(struct igb_q_vector *q_vector)
 		return true;
 
 	/* don't service user (AVB) queues */
-	if (tx_ring->queue_index < 2) 
+	if (tx_ring->queue_index < 2)
 		return true;
 
 	tx_buffer = &tx_ring->tx_buffer_info[i];
@@ -8089,6 +8094,10 @@ static bool igb_clean_rx_irq(struct igb_q_vector *q_vector, int budget)
 	unsigned int total_bytes = 0, total_packets = 0;
 	u16 cleaned_count = igb_desc_unused(rx_ring);
 
+	/* don't service user (AVB) queues */
+	if (rx_ring->queue_index < 2)
+		return true;
+
 	do {
 		struct igb_rx_buffer *rx_buffer;
 		union e1000_adv_rx_desc *rx_desc;
@@ -8400,6 +8409,10 @@ static bool igb_clean_rx_irq(struct igb_q_vector *q_vector, int budget)
 	struct sk_buff *skb = rx_ring->skb;
 	unsigned int total_bytes = 0, total_packets = 0;
 	u16 cleaned_count = igb_desc_unused(rx_ring);
+
+	/* don't service user (AVB) queues */
+	if (rx_ring->queue_index < 2)
+		return true;
 
 	do {
 		union e1000_adv_rx_desc *rx_desc;
@@ -9963,7 +9976,7 @@ static int igb_init_avb( struct e1000_hw *hw )
 
 	E1000_WRITE_REG(hw, E1000_ITPBS, txpbsize);
 
-	/* std sized frames in 64 byte units with VLAN tags applied */	
+	/* std sized frames in 64 byte units with VLAN tags applied */
 	E1000_WRITE_REG(hw, E1000_DTXMXPKTSZ, 1536 / 64);
 
 	/*
@@ -9988,7 +10001,7 @@ static int igb_init_avb( struct e1000_hw *hw )
 			E1000_TQAVCTRL_DATA_TRAN_TIM | \
 			E1000_TQAVCTRL_SP_WAIT_SR;
 
-	/* default to a 10 usec prefetch delta from launch time - time for 
+	/* default to a 10 usec prefetch delta from launch time - time for
 	 * a 1500 byte rx frame to be received over the PCIe Gen1 x1 link.
 	 */
 	tqavctrl |= (10 << 5) << E1000_TQAVCTRL_FETCH_TM_SHIFT ;
@@ -10001,7 +10014,7 @@ static int igb_init_avb( struct e1000_hw *hw )
 /* user-mode API routines */
 
 static unsigned int igb_pollfd(struct file *file, poll_table *wait)
-{ 
+{
 	return -EINVAL; /* don't support reads for any status or data */
 }
 
@@ -10042,7 +10055,7 @@ static struct igb_adapter *igb_lookup(char *id)
 	adapter_lookup.adapter = NULL;
 	adapter_lookup.pci_info = id;
 
-	/* 
+	/*
 	 * iterate over the loaded intefaces and match on their
 	 * pci device ID identifier - e.g. "0000:7:0.0"
 	 */
@@ -10099,7 +10112,7 @@ static int igb_unbind(struct file *file)
 	file->private_data = NULL;
 	return 0;
 }
-				
+
 static long igb_getspeed(struct file *file, void __user *arg)
 {
 	struct igb_adapter *adapter;
@@ -10130,7 +10143,7 @@ static long igb_getspeed(struct file *file, void __user *arg)
 	return(0);
 }
 
-static long igb_mapbuf(struct file *file, void __user *arg, int ring) 
+static long igb_mapbuf(struct file *file, void __user *arg, int ring)
 {
 	struct igb_adapter *adapter;
 	struct igb_buf_cmd req;
@@ -10145,25 +10158,40 @@ static long igb_mapbuf(struct file *file, void __user *arg, int ring)
 		return -ENOENT;
 	}
 
-	if (ring) {
+	if ((ring == IGB_MAPRING) || (ring == IGB_MAP_TX_RING)) {
 		if (req.queue >= 3) {
 			printk("mapring:invalid queue specified(%d)\n", req.queue);
 			return -EINVAL;
 		}
 
-		if (adapter->uring_init & (1 << req.queue)) {
+		if (adapter->uring_tx_init & (1 << req.queue)) {
 			printk("mapring:queue in use (%d)\n", req.queue);
 			return -EBUSY;
 		}
 
-		adapter->uring_init |= (1 << req.queue);
+		adapter->uring_tx_init |= (1 << req.queue);
 
 		req.physaddr = adapter->tx_ring[req.queue]->dma;
 		req.mmap_size = adapter->tx_ring[req.queue]->size;
+	} else if (ring == IGB_MAP_RX_RING) {
+		if (req.queue >= 3) {
+			printk("mapring:invalid queue specified(%d)\n", req.queue);
+			return -EINVAL;
+		}
+
+		if (adapter->uring_rx_init & (1 << req.queue)) {
+			printk("mapring:queue in use (%d)\n", req.queue);
+			return -EBUSY;
+		}
+
+		adapter->uring_rx_init |= (1 << req.queue);
+
+		req.physaddr = adapter->rx_ring[req.queue]->dma;
+		req.mmap_size = adapter->rx_ring[req.queue]->size;
 	} else {
 		struct page *page;
 		dma_addr_t page_dma;
-   		struct igb_user_page *userpage; 
+		struct igb_user_page *userpage;
 
 		userpage = vzalloc(sizeof(struct igb_user_page));
 		if (unlikely(!userpage)) {
@@ -10195,17 +10223,17 @@ static long igb_mapbuf(struct file *file, void __user *arg, int ring)
 			err = -ENOMEM;
 			goto failed;
 		}
-		
+
 		page_dma = dma_map_page( pci_dev_to_dev(adapter->pdev), page,
 						0, PAGE_SIZE,
 						DMA_FROM_DEVICE);
-		
+
 		if (dma_mapping_error(pci_dev_to_dev(adapter->pdev), page_dma)) {
 	   		put_page(page);
 			err = -ENOMEM;
 			goto failed;;
 		}
-	   		 
+
 		adapter->userpages->page = page;
 		adapter->userpages->page_dma = page_dma;
 
@@ -10225,7 +10253,7 @@ failed:
 	return err;
 }
 
-static long igb_unmapbuf(struct file *file, void __user *arg, int ring) 
+static long igb_unmapbuf(struct file *file, void __user *arg, int ring)
 {
 	int err = 0;
 	struct igb_adapter *adapter;
@@ -10240,19 +10268,28 @@ static long igb_unmapbuf(struct file *file, void __user *arg, int ring)
 		return -ENOENT;
 	}
 
-	if (ring) {
+	if ((ring == IGB_MAPRING) || (ring == IGB_MAP_TX_RING)) {
+		/* its easy to figure out what to free on the rings ... */
+		if (req.queue >= 3)
+			return -EINVAL;
+
+		if (0 == (adapter->uring_tx_init & (1 << req.queue)))
+			return -EINVAL;
+
+		adapter->uring_tx_init &= ~(1 << req.queue);
+	} else if (ring == IGB_MAP_RX_RING) {
 		/* its easy to figure out what to free on the rings ... */
 		if (req.queue >= 3) {
 			return -EINVAL;
 		}
 
-		if (0 == (adapter->uring_init & (1 << req.queue)))
+		if (0 == (adapter->uring_rx_init & (1 << req.queue)))
 			return -EINVAL;
 
-		adapter->uring_init &= ~(1 << req.queue);
+		adapter->uring_rx_init &= ~(1 << req.queue);
 	} else {
 		/* have to find the corresponding page to free */
-		struct igb_user_page *userpage; 
+		struct igb_user_page *userpage;
 		userpage = adapter->userpages;
 
 		while (userpage != NULL) {
@@ -10264,7 +10301,7 @@ static long igb_unmapbuf(struct file *file, void __user *arg, int ring)
 		if (userpage == NULL)
 			return -EINVAL;
 
-		dma_unmap_page(pci_dev_to_dev(adapter->pdev), 
+		dma_unmap_page(pci_dev_to_dev(adapter->pdev),
 				userpage->page_dma,
 				PAGE_SIZE,
 				DMA_FROM_DEVICE);
@@ -10298,13 +10335,15 @@ static long igb_ioctl_file(struct file *file, unsigned int cmd, unsigned long ar
 	case IGB_UNBIND:
 		err = igb_unbind(file);
 		break;
-	case IGB_MAPRING:
+	case IGB_MAP_TX_RING:
+	case IGB_MAP_RX_RING:
 	case IGB_MAPBUF:
-		err = igb_mapbuf(file, argp, (cmd==IGB_MAPRING ? 1:0));
+		err = igb_mapbuf(file, argp, cmd);
 		break;
-	case IGB_UNMAPRING:
+	case IGB_UNMAP_TX_RING:
+	case IGB_UNMAP_RX_RING:
 	case IGB_UNMAPBUF:
-		err = igb_unmapbuf(file, argp, (cmd==IGB_UNMAPRING ? 1:0));
+		err = igb_unmapbuf(file, argp, cmd);
 		break;
 	case IGB_LINKSPEED:
 		err = igb_getspeed(file, argp);
@@ -10328,23 +10367,30 @@ static int igb_close_file(struct inode *inode, struct file *file)
 	struct igb_adapter *adapter = file->private_data;
 	int err;
 	int i;
-	struct igb_user_page *userpage; 
+	struct igb_user_page *userpage;
 
 	if (NULL == adapter)
 		return 0;
 
 	/* free up any rings and user-mapped pages */
 	for (i = 0; i < 3; i++) {
-		if (adapter->uring_init & (1 << i)) {
+		if (adapter->uring_tx_init & (1 << i)) {
 			igb_free_tx_resources(adapter->tx_ring[i]);
-			adapter->uring_init &= ~(1 << i);
+			adapter->uring_tx_init &= ~(1 << i);
+		}
+	}
+
+	for (i = 0; i < 3; i++) {
+		if (adapter->uring_rx_init & (1 << i)) {
+			igb_free_rx_resources(adapter->rx_ring[i]);
+			adapter->uring_rx_init &= ~(1 << i);
 		}
 	}
 
 	userpage = adapter->userpages;
 
 	while (userpage != NULL) {
-		dma_unmap_page(pci_dev_to_dev(adapter->pdev), 
+		dma_unmap_page(pci_dev_to_dev(adapter->pdev),
 						userpage->page_dma,
 						PAGE_SIZE,
 						DMA_FROM_DEVICE);
