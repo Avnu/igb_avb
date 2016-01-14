@@ -284,12 +284,12 @@ static void igb_init_dmac(struct igb_adapter *adapter, u32 pba);
 static struct file_operations igb_fops = {
 		.owner   = THIS_MODULE,
 		.llseek  = no_llseek,
-		.read	= igb_read, 
-		.write   = igb_write, 
+		.read	= igb_read,
+		.write   = igb_write,
 		.poll	= igb_pollfd,
-		.open	= igb_open_file, 
-		.release = igb_close_file, 
-		.mmap	= igb_mmap, 
+		.open	= igb_open_file,
+		.release = igb_close_file,
+		.mmap	= igb_mmap,
 		.unlocked_ioctl = igb_ioctl_file,
 #if defined(CONFIG_IGB_SUPPORT_32BIT_IOCTL)
 		.compat_ioctl = igb_ioctl_file,
