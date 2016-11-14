@@ -2490,7 +2490,7 @@ static void igb_set_fw_version(struct igb_adapter *adapter)
 	struct e1000_fw_version fw;
 
 	e1000_get_fw_version(hw, &fw);
-	
+
 	switch (hw->mac.type) {
 	case e1000_i210:
 	case e1000_i211:
@@ -4793,7 +4793,7 @@ static void igb_watchdog_task(struct work_struct *work)
 			default:
 				break;
 			}
-			
+
 			netif_carrier_on(netdev);
 			netif_tx_wake_all_queues(netdev);
 
