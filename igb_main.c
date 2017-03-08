@@ -10408,6 +10408,11 @@ static long igb_mapbuf(struct file *file, void __user *arg, int ring)
 			       req.queue);
 			return -EINVAL;
 		}
+		
+		if(!adapter->num_tx_queues) {
+			printk("tx ring freed\n");
+			return -EINVAL;
+		}
 
 		mutex_lock(&adapter->lock);
 		if (adapter->uring_tx_init & (1 << req.queue)) {
@@ -10426,6 +10431,11 @@ static long igb_mapbuf(struct file *file, void __user *arg, int ring)
 		if (req.queue >= 3) {
 			printk("mapring:invalid queue specified(%d)\n",
 			       req.queue);
+			return -EINVAL;
+		}
+
+		if(!adapter->num_rx_queues) {
+			printk("rx ring freed\n");
 			return -EINVAL;
 		}
 
