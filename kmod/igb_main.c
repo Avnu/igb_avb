@@ -2714,7 +2714,6 @@ static int igb_probe(struct pci_dev *pdev,
 	adapter->uring_tx_init = 0;
 	adapter->uring_rx_init = 0;
 	mutex_init(&adapter->lock);
-	
 #ifdef HAVE_PCI_ERS
 	err = pci_save_state(pdev);
 	if (err)
@@ -10864,7 +10863,6 @@ static int igb_mmap(struct file *file, struct vm_area_struct *vma)
 		physaddr = pci_resource_start(adapter->pdev, 0) >> PAGE_SHIFT;
 	else
 		physaddr = pgoff;
-
 
 	if (remap_pfn_range(vma, vma->vm_start, physaddr, size,
 			    vma->vm_page_prot))
