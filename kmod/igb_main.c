@@ -3334,9 +3334,12 @@ static int __igb_open(struct net_device *netdev, bool resuming)
 	int err;
 	int i;
 
+	mutex_lock(&adapter->lock);
+
 	/* disallow open during test */
 	if (test_bit(__IGB_TESTING, &adapter->state)) {
 		WARN_ON(resuming);
+		mutex_unlock(&adapter->lock);
 		return -EBUSY;
 	}
 
@@ -3412,6 +3415,8 @@ static int __igb_open(struct net_device *netdev, bool resuming)
 	hw->mac.get_link_status = 1;
 	schedule_work(&adapter->watchdog_task);
 
+	mutex_unlock(&adapter->lock);
+
 	return E1000_SUCCESS;
 
 err_set_queues:
@@ -3429,6 +3434,8 @@ err_setup_tx:
 	if (!resuming)
 		pm_runtime_put(&pdev->dev);
 #endif /* CONFIG_PM_RUNTIME */
+
+	mutex_unlock(&adapter->lock);
 
 	return err;
 }
@@ -3456,6 +3463,8 @@ static int __igb_close(struct net_device *netdev, bool suspending)
 	struct pci_dev *pdev = adapter->pdev;
 #endif /* CONFIG_PM_RUNTIME */
 
+	mutex_lock(&adapter->lock);
+
 	WARN_ON(test_bit(__IGB_RESETTING, &adapter->state));
 
 #ifdef CONFIG_PM_RUNTIME
@@ -3478,6 +3487,8 @@ static int __igb_close(struct net_device *netdev, bool suspending)
 	if (!suspending)
 		pm_runtime_put_sync(&pdev->dev);
 #endif /* CONFIG_PM_RUNTIME */
+
+	mutex_unlock(&adapter->lock);
 
 	return 0;
 }
@@ -3538,6 +3549,10 @@ static int igb_setup_all_tx_resources(struct igb_adapter *adapter)
 	int i, err = 0;
 
 	for (i = 0; i < adapter->num_tx_queues; i++) {
+		/* do not reallocate queue in use */
+		if (adapter->uring_tx_init & (1 << i))
+			continue;
+
 		err = igb_setup_tx_resources(adapter->tx_ring[i]);
 		if (err) {
 			dev_err(pci_dev_to_dev(pdev),
@@ -3701,6 +3716,10 @@ static int igb_setup_all_rx_resources(struct igb_adapter *adapter)
 	int i, err = 0;
 
 	for (i = 0; i < adapter->num_rx_queues; i++) {
+		/* do not reallocate queue in use */
+		if (adapter->uring_rx_init & (1 << i))
+			continue;
+
 		err = igb_setup_rx_resources(adapter->rx_ring[i]);
 		if (err) {
 			dev_err(pci_dev_to_dev(pdev),
@@ -4142,8 +4161,10 @@ void igb_free_tx_resources(struct igb_ring *tx_ring)
 {
 	igb_clean_tx_ring(tx_ring);
 
-	vfree(tx_ring->tx_buffer_info);
-	tx_ring->tx_buffer_info = NULL;
+	if (tx_ring->tx_buffer_info) {
+		vfree(tx_ring->tx_buffer_info);
+		tx_ring->tx_buffer_info = NULL;
+	}
 
 	/* if not set, then don't free */
 	if (!tx_ring->desc)
@@ -4165,8 +4186,12 @@ static void igb_free_all_tx_resources(struct igb_adapter *adapter)
 {
 	int i;
 
-	for (i = 0; i < adapter->num_tx_queues; i++)
+	for (i = 0; i < adapter->num_tx_queues; i++) {
+		/* do not free queue in use */
+		if (adapter->uring_tx_init & (1 << i))
+			continue;
 		igb_free_tx_resources(adapter->tx_ring[i]);
+	}
 }
 
 void igb_unmap_and_free_tx_resource(struct igb_ring *ring,
@@ -4244,8 +4269,10 @@ void igb_free_rx_resources(struct igb_ring *rx_ring)
 {
 	igb_clean_rx_ring(rx_ring);
 
-	vfree(rx_ring->rx_buffer_info);
-	rx_ring->rx_buffer_info = NULL;
+	if (rx_ring->rx_buffer_info) {
+		vfree(rx_ring->rx_buffer_info);
+		rx_ring->rx_buffer_info = NULL;
+	}
 
 	/* if not set, then don't free */
 	if (!rx_ring->desc)
@@ -4267,8 +4294,12 @@ static void igb_free_all_rx_resources(struct igb_adapter *adapter)
 {
 	int i;
 
-	for (i = 0; i < adapter->num_rx_queues; i++)
+	for (i = 0; i < adapter->num_rx_queues; i++) {
+		/* do not free queue in use */
+		if (adapter->uring_rx_init & (1 << i))
+			continue;
 		igb_free_rx_resources(adapter->rx_ring[i]);
+	}
 }
 
 /**
@@ -10546,6 +10577,12 @@ static long igb_mapbuf(struct file *file, void __user *arg, int ring)
 			return -EBUSY;
 		}
 
+		if (adapter->tx_ring[req.queue]->desc == NULL) {
+			mutex_unlock(&adapter->lock);
+			printk("mapring:queue is not ready (txq %d)\n", req.queue);
+			return -ENOMEM;
+		}
+
 		adapter->uring_tx_init |= (1 << req.queue);
 		igb_priv->uring_tx_init |= (1 << req.queue);
 
@@ -10572,6 +10609,12 @@ static long igb_mapbuf(struct file *file, void __user *arg, int ring)
 			mutex_unlock(&adapter->lock);
 			printk("mapring:queue in use (%d)\n", req.queue);
 			return -EBUSY;
+		}
+
+		if (adapter->rx_ring[req.queue]->desc == NULL) {
+			mutex_unlock(&adapter->lock);
+			printk("mapring:queue is not ready (rxq %d)\n", req.queue);
+			return -ENOMEM;
 		}
 
 		adapter->uring_rx_init |= (1 << req.queue);
@@ -10793,6 +10836,12 @@ static int igb_close_file(struct inode *inode, struct file *file)
 
 	adapter->uring_tx_init &= ~igb_priv->uring_tx_init;
 	adapter->uring_rx_init &= ~igb_priv->uring_rx_init;
+
+	/* free remaining queue resoures if needed */
+	if (test_bit(__IGB_DOWN, &adapter->state)) {
+		igb_free_all_tx_resources(adapter);
+		igb_free_all_rx_resources(adapter);
+	}
 
 	userpage = igb_priv->userpages;
 
