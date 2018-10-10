@@ -1879,14 +1879,14 @@ void igb_down(struct igb_adapter *adapter)
 	u32 tctl, rctl;
 	int i;
    
-    /* deleting timer and work queue sync 
-       of igb_watchdog task at the begining
-       to avoid race condition between igb_down
-       and watchdog - performing required actions
-       before altering the adapter state and registers
-     */
-    del_timer_sync(&adapter->watchdog_timer);
-    cancel_work_sync(&adapter->watchdog_task);    
+    	/* deleting timer and work queue sync 
+       	of igb_watchdog task at the begining
+       	to avoid race condition between igb_down
+       	and watchdog - performing required actions
+       	before altering the adapter state and registers
+     	*/
+    	del_timer_sync(&adapter->watchdog_timer);
+    	cancel_work_sync(&adapter->watchdog_task);    
 
 	/* signal that we're down so the interrupt handler does not
 	 * reschedule our watchdog timer
