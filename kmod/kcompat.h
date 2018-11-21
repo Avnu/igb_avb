@@ -4704,4 +4704,9 @@ static inline bool page_is_pfmemalloc(struct page __maybe_unused *page)
 #define HAVE_GENEVE_RX_OFFLOAD
 #endif /* 4.5.0 */
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4,19,0))
+#else
+#define HAVE_NDO_SELECT_QUEUE_SB_DEV
+#endif /* 4.19.0 */
+
 #endif /* _KCOMPAT_H_ */

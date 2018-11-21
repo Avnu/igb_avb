@@ -134,7 +134,10 @@ static void igb_dma_err_timer(unsigned long data);
 static void igb_watchdog_task(struct work_struct *);
 static void igb_dma_err_task(struct work_struct *);
 /* AVB specific */
-#ifdef HAVE_NDO_SELECT_QUEUE_ACCEL_FALLBACK
+#if defined HAVE_NDO_SELECT_QUEUE_SB_DEV
+static u16 igb_select_queue(struct net_device *dev, struct sk_buff *skb,
+		struct net_device *sb_dev, select_queue_fallback_t fallback);
+#elif defined HAVE_NDO_SELECT_QUEUE_ACCEL_FALLBACK
 static u16 igb_select_queue(struct net_device *dev, struct sk_buff *skb,
 		void *accel_priv, select_queue_fallback_t fallback);
 #else
@@ -5795,9 +5798,12 @@ static inline struct igb_ring *igb_tx_queue_mapping(struct igb_adapter *adapter,
 #error Must have multi-queue tx support enabled (CONFIG_NETDEVICES_MULTIQUEUE)!
 #endif
 
-#ifdef HAVE_NDO_SELECT_QUEUE_ACCEL_FALLBACK
+#if defined HAVE_NDO_SELECT_QUEUE_SB_DEV
 static u16 igb_select_queue(struct net_device *dev, struct sk_buff *skb,
-			    void *accel_priv, select_queue_fallback_t fallback)
+		struct net_device *sb_dev, select_queue_fallback_t fallback)
+#elif defined HAVE_NDO_SELECT_QUEUE_ACCEL_FALLBACK
+static u16 igb_select_queue(struct net_device *dev, struct sk_buff *skb,
+		void *accel_priv, select_queue_fallback_t fallback)
 #else
 static u16 igb_select_queue(struct net_device *dev, struct sk_buff *skb)
 #endif
