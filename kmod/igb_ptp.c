@@ -1349,12 +1349,9 @@ void igb_ptp_reset(struct igb_adapter *adapter)
 		goto out;
 	}
 
-	/* Re-initialize the timer. */
-	if ((hw->mac.type == e1000_i210) || (hw->mac.type == e1000_i211)) {
-		struct timespec64 ts64 = ktime_to_timespec64(ktime_get_real());
-
-		igb_ptp_write_i210(adapter, &ts64);
-	} else {
+	/* Re-initialize the timer. In case of i210/i211 SYSTIM alterations are performed
+ 	   once - during initialization procedure inside of igb_probe.*/
+	if ((hw->mac.type != e1000_i210) && (hw->mac.type != e1000_i211)) {
 		timecounter_init(&adapter->tc, &adapter->cc,
 				 ktime_to_ns(ktime_get_real()));
 	}

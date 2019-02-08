@@ -134,6 +134,9 @@ static void igb_dma_err_timer(unsigned long data);
 static void igb_watchdog_task(struct work_struct *);
 static void igb_dma_err_task(struct work_struct *);
 /* AVB specific */
+#ifdef HAVE_PTP_1588_CLOCK
+static void igb_reset_systim(struct igb_adapter *, struct timespec64 *);
+#endif
 #if defined HAVE_NDO_SELECT_QUEUE_SB_DEV
 static u16 igb_select_queue(struct net_device *dev, struct sk_buff *skb,
 		struct net_device *sb_dev, select_queue_fallback_t fallback);
@@ -2647,6 +2650,9 @@ static int igb_probe(struct pci_dev *pdev,
 	static int global_quad_port_a; /* global quad port a indication */
 	int err, pci_using_dac;
 	static int cards_found;
+#ifdef HAVE_PTP_1588_CLOCK
+	struct timespec64 ts64; 
+#endif
 
 	err = pci_enable_device_mem(pdev);
 	if (err)
@@ -2997,6 +3003,10 @@ static int igb_probe(struct pci_dev *pdev,
 
 	/* reset the hardware with the new settings */
 	igb_reset(adapter);
+#ifdef HAVE_PTP_1588_CLOCK
+	ts64 = ktime_to_timespec64(ktime_get_real());
+	igb_reset_systim(adapter, &ts64);
+#endif
 	adapter->devrc = 0;
 
 #ifdef HAVE_I2C_SUPPORT
@@ -5796,6 +5806,15 @@ static inline struct igb_ring *igb_tx_queue_mapping(struct igb_adapter *adapter,
 }
 #else
 #error Must have multi-queue tx support enabled (CONFIG_NETDEVICES_MULTIQUEUE)!
+#endif
+
+#ifdef HAVE_PTP_1588_CLOCK
+static void igb_reset_systim(struct igb_adapter *adapter, struct timespec64 *ts64)
+{
+	struct e1000_hw *hw = &adapter->hw;
+	E1000_WRITE_REG(hw, E1000_SYSTIML, ts64->tv_nsec);
+	E1000_WRITE_REG(hw, E1000_SYSTIMH, (u32)ts64->tv_sec);
+}
 #endif
 
 #if defined HAVE_NDO_SELECT_QUEUE_SB_DEV
