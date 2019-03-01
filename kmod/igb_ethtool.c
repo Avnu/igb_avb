@@ -155,79 +155,84 @@ static const char igb_gstrings_test[][ETH_GSTRING_LEN] = {
 #define IGB_TEST_LEN (sizeof(igb_gstrings_test) / ETH_GSTRING_LEN)
 #endif /* ETHTOOL_TEST */
 
-static int igb_get_settings(struct net_device *netdev, struct ethtool_cmd *ecmd)
+
+static int igb_get_link_ksettings(struct net_device *netdev,
+                                struct ethtool_link_ksettings *cmd)
+
 {
 	struct igb_adapter *adapter = netdev_priv(netdev);
 	struct e1000_hw *hw = &adapter->hw;
 	u32 status;
+	u32 speed;
+	u32 supported, advertising;
 
 	if (hw->phy.media_type == e1000_media_type_copper) {
 
-		ecmd->supported = (SUPPORTED_10baseT_Half |
-				   SUPPORTED_10baseT_Full |
-				   SUPPORTED_100baseT_Half |
-				   SUPPORTED_100baseT_Full |
-				   SUPPORTED_1000baseT_Full|
-				   SUPPORTED_Autoneg |
-				   SUPPORTED_TP |
-				   SUPPORTED_Pause);
-		ecmd->advertising = ADVERTISED_TP;
+		supported = (SUPPORTED_10baseT_Half |
+					SUPPORTED_10baseT_Full |
+					SUPPORTED_100baseT_Half |
+					SUPPORTED_100baseT_Full |
+					SUPPORTED_1000baseT_Full|
+					SUPPORTED_Autoneg |
+					SUPPORTED_TP |
+					SUPPORTED_Pause);
+		advertising = ADVERTISED_TP;
 
 		if (hw->mac.autoneg == 1) {
-			ecmd->advertising |= ADVERTISED_Autoneg;
+			advertising |= ADVERTISED_Autoneg;
 			/* the e1000 autoneg seems to match ethtool nicely */
-			ecmd->advertising |= hw->phy.autoneg_advertised;
+			advertising |= hw->phy.autoneg_advertised;
 		}
 
-		ecmd->port = PORT_TP;
-		ecmd->phy_address = hw->phy.addr;
-		ecmd->transceiver = XCVR_INTERNAL;
+		cmd->base.port = PORT_TP;
+		cmd->base.phy_address = hw->phy.addr;
+		//ecmd->transceiver = XCVR_INTERNAL;
 
 	} else {
-		ecmd->supported = (SUPPORTED_1000baseT_Full |
+		supported = (SUPPORTED_1000baseT_Full |
 				   SUPPORTED_100baseT_Full |
 				   SUPPORTED_FIBRE |
 				   SUPPORTED_Autoneg |
 				   SUPPORTED_Pause);
 		if (hw->mac.type == e1000_i354)
-			ecmd->supported |= (SUPPORTED_2500baseX_Full);
+			supported |= (SUPPORTED_2500baseX_Full);
 
-		ecmd->advertising = ADVERTISED_FIBRE;
+		advertising = ADVERTISED_FIBRE;
 
 		switch (adapter->link_speed) {
 		case SPEED_2500:
-			ecmd->advertising = ADVERTISED_2500baseX_Full;
+			advertising = ADVERTISED_2500baseX_Full;
 			break;
 		case SPEED_1000:
-			ecmd->advertising = ADVERTISED_1000baseT_Full;
+			advertising = ADVERTISED_1000baseT_Full;
 			break;
 		case SPEED_100:
-			ecmd->advertising = ADVERTISED_100baseT_Full;
+			advertising = ADVERTISED_100baseT_Full;
 			break;
 		default:
 			break;
 		}
 
 		if (hw->mac.autoneg == 1)
-			ecmd->advertising |= ADVERTISED_Autoneg;
+			advertising |= ADVERTISED_Autoneg;
 
-		ecmd->port = PORT_FIBRE;
-		ecmd->transceiver = XCVR_EXTERNAL;
+		cmd->base.port = PORT_FIBRE;
+		//ecmd->transceiver = XCVR_EXTERNAL;
 	}
 
 	if (hw->mac.autoneg != 1)
-		ecmd->advertising &= ~(ADVERTISED_Pause |
+		advertising &= ~(ADVERTISED_Pause |
 				       ADVERTISED_Asym_Pause);
 
 	if (hw->fc.requested_mode == e1000_fc_full)
-		ecmd->advertising |= ADVERTISED_Pause;
+		advertising |= ADVERTISED_Pause;
 	else if (hw->fc.requested_mode == e1000_fc_rx_pause)
-		ecmd->advertising |= (ADVERTISED_Pause |
+		advertising |= (ADVERTISED_Pause |
 				      ADVERTISED_Asym_Pause);
 	else if (hw->fc.requested_mode == e1000_fc_tx_pause)
-		ecmd->advertising |=  ADVERTISED_Asym_Pause;
+		advertising |=  ADVERTISED_Asym_Pause;
 	else
-		ecmd->advertising &= ~(ADVERTISED_Pause |
+		advertising &= ~(ADVERTISED_Pause |
 				       ADVERTISED_Asym_Pause);
 
 	status = E1000_READ_REG(hw, E1000_STATUS);
@@ -236,56 +241,62 @@ static int igb_get_settings(struct net_device *netdev, struct ethtool_cmd *ecmd)
 		if ((hw->mac.type == e1000_i354) &&
 		    (status & E1000_STATUS_2P5_SKU) &&
 		    !(status & E1000_STATUS_2P5_SKU_OVER))
-			ethtool_cmd_speed_set(ecmd, SPEED_2500);
+			speed = SPEED_2500;
 		else if (status & E1000_STATUS_SPEED_1000)
-			ethtool_cmd_speed_set(ecmd, SPEED_1000);
+			speed = SPEED_1000;
 		else if (status & E1000_STATUS_SPEED_100)
-			ethtool_cmd_speed_set(ecmd, SPEED_100);
+			speed = SPEED_100;
 		else
-			ethtool_cmd_speed_set(ecmd, SPEED_10);
+			speed = SPEED_10;
 
 		if ((status & E1000_STATUS_FD) ||
 		    hw->phy.media_type != e1000_media_type_copper)
-			ecmd->duplex = DUPLEX_FULL;
+			cmd->base.duplex = DUPLEX_FULL;
 		else
-			ecmd->duplex = DUPLEX_HALF;
+			cmd->base.duplex = DUPLEX_HALF;
 
 	} else {
-		ethtool_cmd_speed_set(ecmd, SPEED_UNKNOWN);
-		ecmd->duplex = -1;
+		speed = SPEED_UNKNOWN;
+		cmd->base.duplex = SPEED_UNKNOWN;
 	}
 
 	if ((hw->phy.media_type == e1000_media_type_fiber) ||
 	    hw->mac.autoneg)
-		ecmd->autoneg = AUTONEG_ENABLE;
+		cmd->base.autoneg = AUTONEG_ENABLE;
 	else
-		ecmd->autoneg = AUTONEG_DISABLE;
+		cmd->base.autoneg = AUTONEG_DISABLE;
 #ifdef ETH_TP_MDI_X
 
 	/* MDI-X => 2; MDI =>1; Invalid =>0 */
 	if (hw->phy.media_type == e1000_media_type_copper)
-		ecmd->eth_tp_mdix = hw->phy.is_mdix ? ETH_TP_MDI_X :
+		cmd->base.eth_tp_mdix = hw->phy.is_mdix ? ETH_TP_MDI_X :
 						      ETH_TP_MDI;
 	else
-		ecmd->eth_tp_mdix = ETH_TP_MDI_INVALID;
+		cmd->base.eth_tp_mdix = ETH_TP_MDI_INVALID;
 
 #ifdef ETH_TP_MDI_AUTO
 	if (hw->phy.mdix == AUTO_ALL_MODES)
-		ecmd->eth_tp_mdix_ctrl = ETH_TP_MDI_AUTO;
+		cmd->base.eth_tp_mdix_ctrl = ETH_TP_MDI_AUTO;
 	else
-		ecmd->eth_tp_mdix_ctrl = hw->phy.mdix;
-
+		cmd->base.eth_tp_mdix_ctrl = hw->phy.mdix;
+		ethtool_convert_legacy_u32_to_link_mode(cmd->link_modes.supported,
+												supported);
+		ethtool_convert_legacy_u32_to_link_mode(cmd->link_modes.advertising,
+												advertising);
 #endif
 #endif /* ETH_TP_MDI_X */
 	return 0;
 }
 
-static int igb_set_settings(struct net_device *netdev, struct ethtool_cmd *ecmd)
+
+static int igb_set_link_ksettings(struct net_device *netdev,
+									const struct ethtool_link_ksettings *cmd)
 {
 	struct igb_adapter *adapter = netdev_priv(netdev);
 	struct e1000_hw *hw = &adapter->hw;
-
-	if (ecmd->duplex  == DUPLEX_HALF) {
+	u32 advertising;
+	
+	if (cmd->base.duplex  == DUPLEX_HALF) {
 		if (!hw->dev_spec._82575.eee_disable)
 			dev_info(pci_dev_to_dev(adapter->pdev), "EEE disabled: not supported with half duplex\n");
 		hw->dev_spec._82575.eee_disable = true;
@@ -308,12 +319,12 @@ static int igb_set_settings(struct net_device *netdev, struct ethtool_cmd *ecmd)
 	 * some hardware doesn't allow MDI setting when speed or
 	 * duplex is forced.
 	 */
-	if (ecmd->eth_tp_mdix_ctrl) {
+	if (cmd->base.eth_tp_mdix_ctrl) {
 		if (hw->phy.media_type != e1000_media_type_copper)
 			return -EOPNOTSUPP;
 
-		if ((ecmd->eth_tp_mdix_ctrl != ETH_TP_MDI_AUTO) &&
-		    (ecmd->autoneg != AUTONEG_ENABLE)) {
+		if ((cmd->base.eth_tp_mdix_ctrl != ETH_TP_MDI_AUTO) &&
+		    (cmd->base.autoneg != AUTONEG_ENABLE)) {
 			dev_err(&adapter->pdev->dev, "forcing MDI/MDI-X state is not supported when link speed and/or duplex are forced\n");
 			return -EINVAL;
 		}
@@ -323,10 +334,13 @@ static int igb_set_settings(struct net_device *netdev, struct ethtool_cmd *ecmd)
 	while (test_and_set_bit(__IGB_RESETTING, &adapter->state))
 		usleep_range(1000, 2000);
 
-	if (ecmd->autoneg == AUTONEG_ENABLE) {
+	ethtool_convert_link_mode_to_legacy_u32(&advertising,
+											cmd->link_modes.advertising);
+
+	if (cmd->base.autoneg == AUTONEG_ENABLE) {
 		hw->mac.autoneg = 1;
 		if (hw->phy.media_type == e1000_media_type_fiber) {
-			hw->phy.autoneg_advertised = ecmd->advertising |
+			hw->phy.autoneg_advertised = advertising |
 						     ADVERTISED_FIBRE |
 						     ADVERTISED_Autoneg;
 			switch (adapter->link_speed) {
@@ -346,15 +360,16 @@ static int igb_set_settings(struct net_device *netdev, struct ethtool_cmd *ecmd)
 				break;
 			}
 		} else {
-			hw->phy.autoneg_advertised = ecmd->advertising |
+			hw->phy.autoneg_advertised = advertising |
 						     ADVERTISED_TP |
 						     ADVERTISED_Autoneg;
 		}
-		ecmd->advertising = hw->phy.autoneg_advertised;
+		advertising = hw->phy.autoneg_advertised;
 		if (adapter->fc_autoneg)
 			hw->fc.requested_mode = e1000_fc_default;
 	} else {
-		if (igb_set_spd_dplx(adapter, ecmd->speed + ecmd->duplex)) {
+		u32 speed = cmd->base.speed;
+		if (igb_set_spd_dplx(adapter, speed + cmd->base.duplex)) {
 			clear_bit(__IGB_RESETTING, &adapter->state);
 			return -EINVAL;
 		}
@@ -362,14 +377,14 @@ static int igb_set_settings(struct net_device *netdev, struct ethtool_cmd *ecmd)
 
 #ifdef ETH_TP_MDI_AUTO
 	/* MDI-X => 2; MDI => 1; Auto => 3 */
-	if (ecmd->eth_tp_mdix_ctrl) {
+	if (cmd->base.eth_tp_mdix_ctrl) {
 		/* fix up the value for auto (3 => 0) as zero is mapped
 		 * internally to auto
 		 */
-		if (ecmd->eth_tp_mdix_ctrl == ETH_TP_MDI_AUTO)
+		if (cmd->base.eth_tp_mdix_ctrl == ETH_TP_MDI_AUTO)
 			hw->phy.mdix = AUTO_ALL_MODES;
 		else
-			hw->phy.mdix = ecmd->eth_tp_mdix_ctrl;
+			hw->phy.mdix = cmd->base.eth_tp_mdix_ctrl;
 	}
 
 #endif /* ETH_TP_MDI_AUTO */
@@ -3084,9 +3099,11 @@ static int igb_set_channels(struct net_device *dev,
 
 #endif /* ETHTOOL_SCHANNELS */
 static const struct ethtool_ops igb_ethtool_ops = {
-	.get_settings           = igb_get_settings,
-	.set_settings           = igb_set_settings,
-	.get_drvinfo            = igb_get_drvinfo,
+
+
+	.get_link_ksettings		= igb_get_link_ksettings,
+	.set_link_ksettings		= igb_set_link_ksettings,
+	.get_drvinfo			= igb_get_drvinfo,
 	.get_regs_len           = igb_get_regs_len,
 	.get_regs               = igb_get_regs,
 	.get_wol                = igb_get_wol,
