@@ -296,7 +296,7 @@ int igb_attach_rx(device_t *pdev)
 		return -EINVAL;
 
 	if (igb_lock(pdev) != 0)
-		return errno;
+		return -errno;
 
 	/*
 	 * Allocate and Setup Rx Queues
@@ -310,7 +310,7 @@ int igb_attach_rx(device_t *pdev)
 
 release:
 	if (igb_unlock(pdev) != 0)
-		return errno;
+		return -errno;
 
 	return error;
 }
@@ -396,7 +396,7 @@ int igb_suspend(device_t *dev)
 	txdctl = 0;
 
 	if (igb_lock(dev) != 0)
-		return errno;
+		return -errno;
 
 	/* stop but don't reset the Tx Descriptor Rings */
 	for (i = 0; i < adapter->num_queues; i++, txr++) {
@@ -433,7 +433,7 @@ int igb_suspend(device_t *dev)
 	}
 
 	if (igb_unlock(dev) != 0)
-		return errno;
+		return -errno;
 
 	return 0;
 }
@@ -460,7 +460,7 @@ int igb_resume(device_t *dev)
 	txdctl = 0;
 
 	if (igb_lock(dev) != 0)
-		return errno;
+		return -errno;
 
 	/* resume but don't reset the Tx Descriptor Rings */
 	for (i = 0; i < adapter->num_queues; i++, txr++) {
@@ -500,7 +500,7 @@ int igb_resume(device_t *dev)
 	}
 
 	if (igb_unlock(dev) != 0)
-		return errno;
+		return -errno;
 
 	return 0;
 }
@@ -516,7 +516,7 @@ int igb_init(device_t *dev)
 		return -ENXIO;
 
 	if (igb_lock(dev) != 0)
-		return errno;
+		return -errno;
 
 	igb_reset(adapter);
 
@@ -532,7 +532,7 @@ int igb_init(device_t *dev)
 	}
 
 	if (igb_unlock(dev) != 0)
-		return errno;
+		return -errno;
 
 	return 0;
 }
@@ -679,12 +679,12 @@ int igb_dma_malloc_page(device_t *dev, struct igb_dma_alloc *dma)
 		return -ENXIO;
 
 	if (igb_lock(dev) != 0) {
-		error = errno;
+		error = -errno;
 		goto err;
 	}
 	error = ioctl(adapter->ldev, IGB_IOCTL_MAPBUF, &ubuf);
 	if (igb_unlock(dev) != 0) {
-		error = errno;
+		error = -errno;
 		goto err;
 	}
 
@@ -1001,7 +1001,7 @@ int igb_xmit(device_t *dev, unsigned int queue_index, struct igb_packet *packet)
 		return -EINVAL;
 
 	if (igb_lock(dev) != 0)
-		return errno;
+		return -errno;
 
 	packet->next = NULL; /* used for cleanup */
 
@@ -1093,7 +1093,7 @@ int igb_xmit(device_t *dev, unsigned int queue_index, struct igb_packet *packet)
 
 unlock:
 	if (igb_unlock(dev) != 0)
-		return errno;
+		return -errno;
 
 	return error;
 }
@@ -1347,12 +1347,12 @@ static int igb_allocate_rx_queues(struct adapter *adapter)
 	for (i = 0; i < adapter->num_queues; i++) {
 
 		if (sem_init(&adapter->rx_rings[i].lock, 0, 1) != 0) {
-			error = errno;
+			error = -errno;
 			goto rx_desc;
 		}
 
 		if (sem_wait(&adapter->rx_rings[i].lock) != 0) {
-			error = errno;
+			error = -errno;
 			goto rx_desc;
 		}
 
@@ -1412,7 +1412,7 @@ static int igb_allocate_rx_queues(struct adapter *adapter)
 		       sizeof(struct igb_rx_buffer) * adapter->num_rx_desc);
 
 		if (sem_post(&adapter->rx_rings[i].lock) != 0) {
-			error = errno;
+			error = -errno;
 			goto rx_desc;
 		}
 	}
@@ -1650,7 +1650,7 @@ int igb_refresh_buffers(device_t *dev, u_int32_t idx,
 		return -EINVAL;
 
 	if (sem_trywait(&rxr->lock) != 0)
-		return errno; /* EAGAIN */
+		return -errno; /* EAGAIN */
 
 	if (adapter->active != 1) {
 		sem_post(&rxr->lock);
@@ -1692,7 +1692,7 @@ int igb_refresh_buffers(device_t *dev, u_int32_t idx,
 				E1000_RDT(rxr->me), rxr->next_to_refresh);
 
 	if (sem_post(&rxr->lock) != 0)
-		return errno;
+		return -errno;
 
 	return 0;
 }
@@ -1746,7 +1746,7 @@ int igb_receive(device_t *dev, unsigned int queue_index,
 	*received_packets = NULL; /* nothing reclaimed yet */
 
 	if (sem_trywait(&rxr->lock) != 0)
-		return errno; /* EAGAIN */
+		return -errno; /* EAGAIN */
 
 	if (adapter->active != 1) {
 		sem_post(&rxr->lock);
@@ -1825,12 +1825,12 @@ next_desc:
 	rxr->next_to_check = desc;
 
 	if (sem_post(&rxr->lock) != 0)
-		return errno;
+		return -errno;
 
 	if (*received_packets == NULL) {
 		/* nothing reclaimed yet */
 		errno = EAGAIN;
-		return errno;
+		return -errno;
 	}
 
 	return 0;
@@ -1881,7 +1881,7 @@ int igb_get_wallclock(device_t *dev, u_int64_t *curtime, u_int64_t *rdtsc)
 	hw = &adapter->hw;
 
 	if (igb_lock(dev) != 0)
-		return errno;
+		return -errno;
 
 	/* sample the timestamp bracketed by the RDTSC */
 	for (iter = 0; iter < MAX_ITER && t1 - t0 > MIN_WALLCLOCK_TSC_WINDOW;
@@ -1910,7 +1910,7 @@ int igb_get_wallclock(device_t *dev, u_int64_t *curtime, u_int64_t *rdtsc)
 	}
 
 	if (igb_unlock(dev) != 0) {
-		error = errno;
+		error = -errno;
 		goto err;
 	}
 
@@ -1972,7 +1972,7 @@ int igb_gettime(device_t *dev, clockid_t clk_id, u_int64_t *curtime,
 	hw = &adapter->hw;
 
 	if (igb_lock(dev) != 0)
-		return errno;
+		return -errno;
 
 	/* sample the timestamp bracketed by the clock_gettime() */
 	for (iter = 0; iter < MAX_ITER && duration > MIN_SYSCLOCK_WINDOW;
@@ -2006,7 +2006,7 @@ int igb_gettime(device_t *dev, clockid_t clk_id, u_int64_t *curtime,
 	}
 
 	if (igb_unlock(dev) != 0) {
-		error = errno;
+		error = -errno;
 		goto err;
 	}
 	/* Return the window size * -1 */
@@ -2068,7 +2068,7 @@ int igb_set_class_bandwidth(device_t *dev, u_int32_t class_a, u_int32_t class_b,
 		return -EINVAL;
 
 	if (igb_lock(dev) != 0)
-		return errno;
+		return -errno;
 
 	tqavctrl = E1000_READ_REG(hw, E1000_TQAVCTRL);
 
@@ -2162,7 +2162,7 @@ int igb_set_class_bandwidth(device_t *dev, u_int32_t class_a, u_int32_t class_b,
 
 unlock:
 	if (igb_unlock(dev) != 0)
-		error = errno;
+		error = -errno;
 
 	return error;
 }
@@ -2210,7 +2210,7 @@ int igb_set_class_bandwidth2(device_t *dev, u_int32_t class_a_bytes_per_second,
 		return -EINVAL;
 
 	if (igb_lock(dev) != 0)
-		return errno;
+		return -errno;
 
 	tqavctrl = E1000_READ_REG(hw, E1000_TQAVCTRL);
 
@@ -2300,7 +2300,7 @@ int igb_set_class_bandwidth2(device_t *dev, u_int32_t class_a_bytes_per_second,
 
 unlock:
 	if (igb_unlock(dev) != 0)
-		error = errno;
+		error = -errno;
 
 	return error;
 }
