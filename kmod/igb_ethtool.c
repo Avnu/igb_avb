@@ -1883,7 +1883,12 @@ static void igb_diag_test(struct net_device *netdev,
 
 		clear_bit(__IGB_TESTING, &adapter->state);
 		if (if_running)
+#ifdef HAVE_NETLINK_EXT_ACK
+			dev_open(netdev, NULL);
+#else
 			dev_open(netdev);
+#endif HAVE_NETLINK_EXT_ACK
+
 	} else {
 		dev_info(pci_dev_to_dev(adapter->pdev), "online testing starting\n");
 
