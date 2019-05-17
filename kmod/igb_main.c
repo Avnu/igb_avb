@@ -2279,9 +2279,16 @@ static int igb_ndo_fdb_dump(struct sk_buff *skb,
 
 #ifdef HAVE_BRIDGE_ATTRIBS
 #ifdef HAVE_NDO_BRIDGE_SET_DEL_LINK_FLAGS
+#ifdef HAVE_NETLINK_EXT_ACK
+static int igb_ndo_bridge_setlink(struct net_device *dev,
+				  struct nlmsghdr *nlh,
+				  u16 flags,
+				  struct netlink_ext_ack *extack)
+#else
 static int igb_ndo_bridge_setlink(struct net_device *dev,
 				  struct nlmsghdr *nlh,
 				  u16 flags)
+#endif /* HAVE_NETLINK_EXT_ACK */
 #else
 static int igb_ndo_bridge_setlink(struct net_device *dev,
 				  struct nlmsghdr *nlh)
