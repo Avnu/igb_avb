@@ -2188,7 +2188,11 @@ static int igb_ndo_fdb_add(struct ndmsg *ndm, struct nlattr *tb[],
 #ifdef HAVE_NDO_FDB_ADD_VID
 			   u16 vid,
 #endif
-			   u16 flags)
+			   u16 flags
+#ifdef HAVE_NDO_FDB_ADD_EXT_ACK
+			   , struct netlink_ext_ack *extack
+#endif
+			  )
 #else /* USE_CONST_DEV_UC_CHAR */
 static int igb_ndo_fdb_add(struct ndmsg *ndm,
 			   struct net_device *dev,
