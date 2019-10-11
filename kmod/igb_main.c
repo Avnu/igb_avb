@@ -478,20 +478,31 @@ u32 e1000_read_reg(struct e1000_hw *hw, u32 reg)
 {
 	struct igb_adapter *igb = container_of(hw, struct igb_adapter, hw);
 	u8 __iomem *hw_addr = READ_ONCE(hw->hw_addr);
-	u32 value = 0;
 
-	if (E1000_REMOVED(hw_addr))
-		return ~value;
+	/* setting default value to 0xffffffff
+	 * so that in failing registry read scenario
+	 * function returns a clearly improper value
+	 */
+	u32 value = 0xffffffff;
+
+	if (igb->is_detached)
+		goto err_detach;
 
 	value = readl(&hw_addr[reg]);
-
 	/* reads should not return all F's */
 	if (!(~value) && (!reg || !(~readl(hw_addr)))) {
-		struct net_device *netdev = igb->netdev;
+		struct net_device *netdev;
 
-		hw->hw_addr = NULL;
+err_detach:
+		netdev = igb->netdev;
+		/* in order to avoid concurrent process operating on NULL'ed addresses
+		 * setting the hw_addr again to io_addr is done on purpose
+		 * Mechanism preventing from reading a register on hw_addr==NULL
+		 * which causes NULL ptr dereference and kernel RIP as a consequence
+		 */
 		netif_device_detach(netdev);
-		netdev_err(netdev, "PCIe link lost, device now detached\n");
+		igb->is_detached = true;
+		netdev_err(netdev, "PCIe link lost, device now detached. Device hw_addr not available anymore\n");
 	}
 
 	return value;
@@ -2755,6 +2766,7 @@ static int igb_probe(struct pci_dev *pdev,
 	if (!hw->hw_addr)
 		goto err_ioremap;
 
+	adapter->is_detached = false;
 #ifdef HAVE_NET_DEVICE_OPS
 	netdev->netdev_ops = &igb_netdev_ops;
 #else /* HAVE_NET_DEVICE_OPS */
