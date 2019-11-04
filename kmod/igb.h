@@ -561,7 +561,6 @@ struct igb_adapter {
 	u16 link_speed;
 	u16 link_duplex;
 	u8 port_num;
-
 	/* Interrupt Throttle Rate */
 	u32 rx_itr_setting;
 	u32 tx_itr_setting;
@@ -571,6 +570,7 @@ struct igb_adapter {
 	struct work_struct dma_err_task;
 	bool fc_autoneg;
 	u8  tx_timeout_factor;
+	bool is_detached;
 
 #ifdef DEBUG
 	bool tx_hang_detected;

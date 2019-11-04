@@ -347,7 +347,7 @@ else
   ifeq ($(DEPVER),1 )
 	/sbin/depmod -r $(INSTALL_MOD_PATH) -a || true
   else
-	/sbin/depmod -b $(INSTALL_MOD_PATH) -a -n $(KVERSION) > /dev/null || true
+	/sbin/depmod -b $(INSTALL_MOD_PATH) -a $(KVER) || true
   endif
 endif
 	install -D -m 644 $(MANFILE).gz $(INSTALL_MOD_PATH)$(MANDIR)/man$(MANSECTION)/$(MANFILE).gz

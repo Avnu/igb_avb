@@ -4709,4 +4709,16 @@ static inline bool page_is_pfmemalloc(struct page __maybe_unused *page)
 #define HAVE_NDO_SELECT_QUEUE_SB_DEV
 #endif /* 4.19.0 */
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,20,0))
+#define IGB_SETTINGS_NEWETHOPS
+#endif
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,0,0))
+#define HAVE_NETLINK_EXT_ACK
+#endif /* 5.0.0 */
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,1,0))
+#define HAVE_NDO_FDB_ADD_EXT_ACK
+#endif /* 5.1.0 */
+
 #endif /* _KCOMPAT_H_ */
