@@ -175,6 +175,9 @@ EXTRA_CFLAGS += $(shell [ -f $(KSRC)/include/linux/modversions.h ] && \
 
 EXTRA_CFLAGS += -fno-PIC
 
+# security enhancing flags
+EXTRA_CFLAGS += -fstack-protector-strong -fno-strict-overflow -fno-delete-null-pointer-checks -fwrapv
+
 EXTRA_CFLAGS += $(CFLAGS_EXTRA)
 
 RHC := $(KSRC)/include/linux/rhconfig.h
