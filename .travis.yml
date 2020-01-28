@@ -1,13 +1,13 @@
+os: linux
 dist: trusty
-sudo: required
-
 language: c
+
 before_install:
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
   - sudo apt-get update -qq
-  - sudo apt-get install doxygen graphviz gcc-4.8 g++-4.8
-  - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 20
-  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 20
+  - sudo apt-get install doxygen graphviz gcc-4.9 g++-4.9
+  - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.9 20
+  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.9 20
   - sudo update-alternatives --install /usr/bin/cc cc /usr/bin/gcc 30
   - sudo update-alternatives --set cc /usr/bin/gcc
   - sudo update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++ 30
