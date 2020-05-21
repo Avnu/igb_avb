@@ -264,9 +264,9 @@ $(DRIVER_NAME)-objs := $(CFILES:.c=.o)
 else
 default:
 ifeq ($(KOBJ),$(KSRC))
-	$(MAKE) -C $(KSRC) SUBDIRS=$(shell pwd) modules
+	$(MAKE) -C $(KSRC) M=$(shell pwd) modules
 else
-	$(MAKE) -C $(KSRC) O=$(KOBJ) SUBDIRS=$(shell pwd) modules
+	$(MAKE) -C $(KSRC) O=$(KOBJ) M=$(shell pwd) modules
 endif
 endif
 
