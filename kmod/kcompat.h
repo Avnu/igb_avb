@@ -1974,10 +1974,6 @@ static inline unsigned _kc_compare_ether_addr(const u8 *addr1, const u8 *addr2)
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 #endif
 
-#ifndef FIELD_SIZEOF
-#define FIELD_SIZEOF(t, f) (sizeof(((t*)0)->f))
-#endif
-
 #ifndef skb_is_gso
 #ifdef NETIF_F_TSO
 #define skb_is_gso _kc_skb_is_gso
@@ -4708,6 +4704,12 @@ static inline bool page_is_pfmemalloc(struct page __maybe_unused *page)
 #define HAVE_GENEVE_RX_OFFLOAD
 #endif /* 4.5.0 */
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4,16,0))
+#ifndef sizeof_field
+#define sizeof_field(t, f) (sizeof(((t*)0)->f))
+#endif
+#endif /* 4.16.0 */
+
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(4,19,0))
 #else
 #define HAVE_NDO_SELECT_QUEUE_SB_DEV
@@ -4732,5 +4734,9 @@ static inline bool page_is_pfmemalloc(struct page __maybe_unused *page)
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5,4,0))
 #define HAVE_SKB_FRAG_STRUCT
 #endif /* 5.4.0 */
+
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5,7,0))
+#define pci_aer_clear_nonfatal_status(x) pci_cleanup_aer_uncorrect_error_status(x)
+#endif /* 5.7.0 */
 
 #endif /* _KCOMPAT_H_ */
