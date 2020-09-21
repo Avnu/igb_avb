@@ -5566,7 +5566,7 @@ static void igb_tx_olinfo_status(struct igb_ring *tx_ring,
 	tx_desc->read.olinfo_status = cpu_to_le32(olinfo_status);
 }
 
-static void igb_tx_map(struct igb_ring *tx_ring,
+static int igb_tx_map(struct igb_ring *tx_ring,
 		       struct igb_tx_buffer *first,
 		       const u8 hdr_len)
 {
@@ -5679,7 +5679,7 @@ static void igb_tx_map(struct igb_ring *tx_ring,
 	 */
 	mmiowb();
 
-	return;
+	return 0;
 
 dma_error:
 	dev_err(tx_ring->dev, "TX DMA map failed\n");
@@ -5696,6 +5696,7 @@ dma_error:
 	}
 
 	tx_ring->next_to_use = i;
+	return -1;
 }
 
 static int __igb_maybe_stop_tx(struct igb_ring *tx_ring, const u16 size)
