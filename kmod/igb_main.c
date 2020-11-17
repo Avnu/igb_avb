@@ -7412,8 +7412,11 @@ static bool igb_clean_tx_irq(struct igb_q_vector *q_vector)
 			break;
 
 		/* prevent any other reads prior to eop_desc */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,9,0)
+		smp_rmb();
+#else		
 		read_barrier_depends();
-
+#endif
 		/* if DD is not set pending work has not been completed */
 		if (!(eop_desc->wb.status & cpu_to_le32(E1000_TXD_STAT_DD)))
 			break;
