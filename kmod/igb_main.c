@@ -5566,7 +5566,7 @@ static void igb_tx_olinfo_status(struct igb_ring *tx_ring,
 	tx_desc->read.olinfo_status = cpu_to_le32(olinfo_status);
 }
 
-static void igb_tx_map(struct igb_ring *tx_ring,
+static int igb_tx_map(struct igb_ring *tx_ring,
 		       struct igb_tx_buffer *first,
 		       const u8 hdr_len)
 {
@@ -5679,7 +5679,7 @@ static void igb_tx_map(struct igb_ring *tx_ring,
 	 */
 	mmiowb();
 
-	return;
+	return 0;
 
 dma_error:
 	dev_err(tx_ring->dev, "TX DMA map failed\n");
@@ -5696,6 +5696,7 @@ dma_error:
 	}
 
 	tx_ring->next_to_use = i;
+	return -1;
 }
 
 static int __igb_maybe_stop_tx(struct igb_ring *tx_ring, const u16 size)
@@ -7411,8 +7412,11 @@ static bool igb_clean_tx_irq(struct igb_q_vector *q_vector)
 			break;
 
 		/* prevent any other reads prior to eop_desc */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,9,0)
+		smp_rmb();
+#else		
 		read_barrier_depends();
-
+#endif
 		/* if DD is not set pending work has not been completed */
 		if (!(eop_desc->wb.status & cpu_to_le32(E1000_TXD_STAT_DD)))
 			break;

@@ -3144,6 +3144,7 @@ static int igb_set_channels(struct net_device *dev,
 
 #endif /* ETHTOOL_SCHANNELS */
 static const struct ethtool_ops igb_ethtool_ops = {
+	.supported_coalesce_params = ETHTOOL_COALESCE_USECS,
 	.get_drvinfo            = igb_get_drvinfo,
 	.get_regs_len           = igb_get_regs_len,
 	.get_regs               = igb_get_regs,
