@@ -95,6 +95,9 @@
 #define PICOSECS_PER_TICK	20833
 #define TSYNC_PORT		319 /* UDP port for the protocol */
 
+/* RXDCTL.ENABLE bit poll retries */
+#define IGB_RXDCTL_MAX_POLL		(5)
+
 struct igb_tx_buffer {
 	int next_eop; /* Index of the desc to watch */
 	struct igb_packet *packet; /* app-relevant handle */
