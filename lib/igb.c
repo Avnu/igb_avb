@@ -593,10 +593,13 @@ igb_reset(struct adapter *adapter)
 
 		for (i = 0; i < adapter->num_queues; i++, rxr++) {
 			u64 bus_addr = rxr->rxdma.paddr;
-			u32 rxdctl;
+			u32 rxdctl, rxdctlpollcnt = 0;
 
 			/* Disable this Queue */
 			E1000_WRITE_REG(hw, E1000_RXDCTL(i), 0);
+			do {
+				rxdctl = E1000_READ_REG(hw, E1000_RXDCTL(i)) & E1000_RXDCTL_QUEUE_ENABLE;
+			} while (rxdctl && ++rxdctlpollcnt < IGB_RXDCTL_MAX_POLL);
 
 			E1000_WRITE_REG(hw, E1000_RDLEN(i),
 					adapter->num_rx_desc *
@@ -615,6 +618,11 @@ igb_reset(struct adapter *adapter)
 			rxdctl |= IGB_RX_HTHRESH << 8;
 			rxdctl |= IGB_RX_WTHRESH << 16;
 			E1000_WRITE_REG(hw, E1000_RXDCTL(i), rxdctl);
+
+			rxdctlpollcnt = 0;
+			do {
+				rxdctl = E1000_READ_REG(hw, E1000_RXDCTL(i)) & E1000_RXDCTL_QUEUE_ENABLE;
+			} while (!rxdctl && ++rxdctlpollcnt < IGB_RXDCTL_MAX_POLL);
 		}
 	}
 }
@@ -1507,10 +1515,13 @@ static void igb_initialize_receive_units(struct adapter *adapter)
 	/* Setup the Base and Length of the Rx Descriptor Rings */
 	for (i = 0; i < adapter->num_queues; i++, rxr++) {
 		u64 bus_addr = rxr->rxdma.paddr;
-		u32 rxdctl;
+		u32 rxdctl, rxdctlpollcnt = 0;
 
 		/* Disable this Queue */
 		E1000_WRITE_REG(hw, E1000_RXDCTL(i), 0);
+		do {
+			rxdctl = E1000_READ_REG(hw, E1000_RXDCTL(i)) & E1000_RXDCTL_QUEUE_ENABLE;
+		} while (rxdctl && ++rxdctlpollcnt < IGB_RXDCTL_MAX_POLL);
 
 		E1000_WRITE_REG(hw, E1000_RDLEN(i),
 				adapter->num_rx_desc *
@@ -1529,6 +1540,11 @@ static void igb_initialize_receive_units(struct adapter *adapter)
 		rxdctl |= IGB_RX_HTHRESH << 8;
 		rxdctl |= IGB_RX_WTHRESH << 16;
 		E1000_WRITE_REG(hw, E1000_RXDCTL(i), rxdctl);
+
+		rxdctlpollcnt = 0;
+		do {
+			rxdctl = E1000_READ_REG(hw, E1000_RXDCTL(i)) & E1000_RXDCTL_QUEUE_ENABLE;
+		} while (!rxdctl && ++rxdctlpollcnt < IGB_RXDCTL_MAX_POLL);
 	}
 
 	/*
