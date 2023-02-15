@@ -2021,7 +2021,13 @@ static int igb_phys_id(struct net_device *netdev, u32 data)
 #endif /* HAVE_ETHTOOL_SET_PHYS_ID */
 
 static int igb_set_coalesce(struct net_device *netdev,
+#ifdef HAVE_ETHTOOL_COALESCE_EXT
+			    struct ethtool_coalesce *ec,
+			    struct kernel_ethtool_coalesce *kernel_coal,
+			    struct netlink_ext_ack *extack)
+#else
 			    struct ethtool_coalesce *ec)
+#endif
 {
 	struct igb_adapter *adapter = netdev_priv(netdev);
 	int i;
@@ -2103,7 +2109,13 @@ static int igb_set_coalesce(struct net_device *netdev,
 }
 
 static int igb_get_coalesce(struct net_device *netdev,
+#ifdef HAVE_ETHTOOL_COALESCE_EXT
+			    struct ethtool_coalesce *ec,
+			    struct kernel_ethtool_coalesce *kernel_coal,
+			    struct netlink_ext_ack *extack)
+#else
 			    struct ethtool_coalesce *ec)
+#endif
 {
 	struct igb_adapter *adapter = netdev_priv(netdev);
 
