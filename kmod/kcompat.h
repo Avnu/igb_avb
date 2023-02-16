@@ -4739,6 +4739,10 @@ static inline bool page_is_pfmemalloc(struct page __maybe_unused *page)
 #define pci_aer_clear_nonfatal_status(x) pci_cleanup_aer_uncorrect_error_status(x)
 #endif /* 5.7.0 */
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,7,0))
+#define HAVE_ETHTOOL_COALESCE_PARAMS
+#endif /* 5.7.0 */
+
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,15,0))
 #define HAVE_ETHTOOL_COALESCE_EXT
 #endif /* 5.15.0 */
