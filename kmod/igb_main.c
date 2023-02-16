@@ -2409,7 +2409,11 @@ static const struct net_device_ops igb_netdev_ops = {
 	.ndo_set_rx_mode	= igb_set_rx_mode,
 	.ndo_set_mac_address	= igb_set_mac,
 	.ndo_change_mtu		= igb_change_mtu,
+#ifdef HAVE_NDO_ETH_IOCTL
+	.ndo_eth_ioctl		= igb_ioctl,
+#else
 	.ndo_do_ioctl		= igb_ioctl,
+#endif
 	.ndo_tx_timeout		= igb_tx_timeout,
 	.ndo_validate_addr	= eth_validate_addr,
 	.ndo_vlan_rx_add_vid	= igb_vlan_rx_add_vid,

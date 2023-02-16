@@ -4745,6 +4745,7 @@ static inline bool page_is_pfmemalloc(struct page __maybe_unused *page)
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,15,0))
 #define HAVE_ETHTOOL_COALESCE_EXT
+#define HAVE_NDO_ETH_IOCTL
 #endif /* 5.15.0 */
 
 #endif /* _KCOMPAT_H_ */
