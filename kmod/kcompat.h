@@ -4748,4 +4748,8 @@ static inline bool page_is_pfmemalloc(struct page __maybe_unused *page)
 #define HAVE_NDO_ETH_IOCTL
 #endif /* 5.15.0 */
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0))
+#define eth_random_addr(addr) random_ether_addr(addr)
+#endif /* 3.6.0 */
+
 #endif /* _KCOMPAT_H_ */
