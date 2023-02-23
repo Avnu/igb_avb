@@ -1216,7 +1216,11 @@ static int igb_alloc_q_vector(struct igb_adapter *adapter,
 #endif
 	/* initialize NAPI */
 	netif_napi_add(adapter->netdev, &q_vector->napi,
+#ifdef HAVE_NETIF_NAPI_ADD_WEIGHT_REMOVED
+		       igb_poll);
+#else
 		       igb_poll, 64);
+#endif
 
 	/* tie q_vector and adapter together */
 	adapter->q_vector[v_idx] = q_vector;
