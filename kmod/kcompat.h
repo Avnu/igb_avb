@@ -752,6 +752,13 @@ struct _kc_ethtool_pauseparam {
 #define UTS_UBUNTU_RELEASE_ABI 0
 #define UBUNTU_VERSION_CODE 0
 #else
+
+#if UTS_UBUNTU_RELEASE_ABI > 255
+/* UTS_UBUNTU_RELEASE_ABI is too large... */
+#undef UTS_UBUNTU_RELEASE_ABI
+#define UTS_UBUNTU_RELEASE_ABI 255
+#endif /* UTS_UBUNTU_RELEASE_ABI > 255 */
+
 /* Ubuntu does not provide actual release version macro, so we use the kernel
  * version plus the ABI to generate a unique version code specific to Ubuntu.
  * In addition, we mask the lower 8 bits of LINUX_VERSION_CODE in order to
@@ -760,10 +767,6 @@ struct _kc_ethtool_pauseparam {
  * ordering checks.
  */
 #define UBUNTU_VERSION_CODE (((LINUX_VERSION_CODE & ~0xFF) << 8) + (UTS_UBUNTU_RELEASE_ABI))
-
-#if UTS_UBUNTU_RELEASE_ABI > 255
-#error UTS_UBUNTU_RELEASE_ABI is too large...
-#endif /* UTS_UBUNTU_RELEASE_ABI > 255 */
 
 #if ( LINUX_VERSION_CODE <= KERNEL_VERSION(3,0,0) )
 /* Our version code scheme does not make sense for non 3.x or newer kernels,
