@@ -4752,4 +4752,8 @@ static inline bool page_is_pfmemalloc(struct page __maybe_unused *page)
 #define eth_random_addr(addr) random_ether_addr(addr)
 #endif /* 3.6.0 */
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,17,0))
+#define HAVE_ETHTOOL_RINGPARAM_EXT
+#endif /* 5.17.0 */
+
 #endif /* _KCOMPAT_H_ */
