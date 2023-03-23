@@ -2692,11 +2692,11 @@ static int igb_get_rss_hash_opts(struct igb_adapter *adapter,
 	switch (cmd->flow_type) {
 	case TCP_V4_FLOW:
 		cmd->data |= RXH_L4_B_0_1 | RXH_L4_B_2_3;
-		/* Fall through */
+		fallthrough;
 	case UDP_V4_FLOW:
 		if (adapter->flags & IGB_FLAG_RSS_FIELD_IPV4_UDP)
 			cmd->data |= RXH_L4_B_0_1 | RXH_L4_B_2_3;
-		/* Fall through */
+		fallthrough;
 	case SCTP_V4_FLOW:
 	case AH_ESP_V4_FLOW:
 	case AH_V4_FLOW:
@@ -2706,11 +2706,11 @@ static int igb_get_rss_hash_opts(struct igb_adapter *adapter,
 		break;
 	case TCP_V6_FLOW:
 		cmd->data |= RXH_L4_B_0_1 | RXH_L4_B_2_3;
-		/* Fall through */
+		fallthrough;
 	case UDP_V6_FLOW:
 		if (adapter->flags & IGB_FLAG_RSS_FIELD_IPV6_UDP)
 			cmd->data |= RXH_L4_B_0_1 | RXH_L4_B_2_3;
-		/* Fall through */
+		fallthrough;
 	case SCTP_V6_FLOW:
 	case AH_ESP_V6_FLOW:
 	case AH_V6_FLOW:
@@ -3037,13 +3037,13 @@ static unsigned int igb_max_rss_queues(struct igb_adapter *adapter)
 			max_rss_queues = 1;
 			break;
 		}
-		/* fall through */
+		fallthrough;
 	case e1000_82576:
 		if (adapter->vfs_allocated_count) {
 			max_rss_queues = 2;
 			break;
 		}
-		/* fall through */
+		fallthrough;
 	case e1000_82580:
 	default:
 		max_rss_queues = IGB_MAX_RX_QUEUES;
@@ -3130,6 +3130,7 @@ static int igb_set_channels(struct net_device *dev,
 		/* The PF has 3 interrupts and 1 queue pair w/ SR-IOV */
 		if (adapter->vfs_allocated_count)
 			break;
+		fallthrough;
 	case e1000_82576:
 		/*
 		 * The PF has access to 6 interrupt vectors if the number of
@@ -3139,7 +3140,7 @@ static int igb_set_channels(struct net_device *dev,
 		if ((adapter->vfs_allocated_count > 0) &&
 		    (adapter->vfs_allocated_count < 7))
 			break;
-		/* fall through */
+		fallthrough;
 	case e1000_82580:
 	case e1000_i210:
 	default:
