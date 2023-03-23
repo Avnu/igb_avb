@@ -2927,7 +2927,11 @@ static int igb_probe(struct pci_dev *pdev,
 	/* copy the MAC address out of the NVM */
 	if (e1000_read_mac_addr(hw))
 		dev_err(pci_dev_to_dev(pdev), "NVM Read Error\n");
+#ifdef HAS_ETH_HW_ADDR_SET
+	eth_hw_addr_set(netdev, hw->mac.addr);
+#else
 	memcpy(netdev->dev_addr, hw->mac.addr, netdev->addr_len);
+#endif /* HAS_ETH_HW_ADDR_SET */
 #ifdef ETHTOOL_GPERMADDR
 	memcpy(netdev->perm_addr, hw->mac.addr, netdev->addr_len);
 
@@ -4454,7 +4458,11 @@ static int igb_set_mac(struct net_device *netdev, void *p)
 	if (!is_valid_ether_addr(addr->sa_data))
 		return -EADDRNOTAVAIL;
 
+#ifdef HAS_ETH_HW_ADDR_SET
+	eth_hw_addr_set(netdev, addr->sa_data);
+#else
 	memcpy(netdev->dev_addr, addr->sa_data, netdev->addr_len);
+#endif /* HAS_ETH_HW_ADDR_SET */
 	memcpy(hw->mac.addr, addr->sa_data, netdev->addr_len);
 
 	/* set the correct pool for the new PF MAC address in entry 0 */

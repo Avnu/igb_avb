@@ -4773,4 +4773,8 @@ static inline bool page_is_pfmemalloc(struct page __maybe_unused *page)
 #define fallthrough do {} while (0)  /* fallthrough */
 #endif
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,15,0))
+#define HAS_ETH_HW_ADDR_SET
+#endif /* 5.15.0 */
+
 #endif /* _KCOMPAT_H_ */
