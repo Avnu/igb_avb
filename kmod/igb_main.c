@@ -1143,13 +1143,14 @@ static void igb_set_interrupt_capability(struct igb_adapter *adapter, bool msix)
 		dev_warn(pci_dev_to_dev(pdev),
 			 "Failed to initialize MSI-X interrupts. Falling back to MSI interrupts.\n");
 		igb_reset_interrupt_capability(adapter);
+		fallthrough;
 	case IGB_INT_MODE_MSI:
 		if (!pci_enable_msi(pdev))
 			adapter->flags |= IGB_FLAG_HAS_MSI;
 		else
 			dev_warn(pci_dev_to_dev(pdev),
 				"Failed to initialize MSI interrupts.  Falling back to legacy interrupts.\n");
-		/* Fall through */
+		fallthrough;
 	case IGB_INT_MODE_LEGACY:
 		/* disable advanced features and set number of queues to 1 */
 		igb_reset_sriov_capability(adapter);
@@ -2577,7 +2578,7 @@ static void igb_set_fw_version(struct igb_adapter *adapter)
 			    fw.invm_major, fw.invm_minor, fw.invm_img_type);
 			break;
 		}
-		/* fall through */
+		fallthrough;
 	default:
 		/* if option rom is valid, display its version too*/
 		if (fw.or_valid) {
@@ -4825,6 +4826,7 @@ bool igb_has_link(struct igb_adapter *adapter)
 	case e1000_media_type_copper:
 		if (!hw->mac.get_link_status)
 			return true;
+		fallthrough;
 	case e1000_media_type_internal_serdes:
 		e1000_check_for_link(hw);
 		link_active = !hw->mac.get_link_status;
@@ -6489,7 +6491,7 @@ static int __igb_notify_dca(struct device *dev, void *data)
 			igb_setup_dca(adapter);
 			break;
 		}
-		/* Fall Through since DCA is disabled. */
+		fallthrough;
 	case DCA_PROVIDER_REMOVE:
 		if (adapter->flags & IGB_FLAG_DCA_ENABLED) {
 			/* without this a class_device is left
@@ -10026,13 +10028,13 @@ static void igb_vmm_control(struct igb_adapter *adapter)
 		reg |= (E1000_DTXCTL_VLAN_ADDED |
 			E1000_DTXCTL_SPOOF_INT);
 		E1000_WRITE_REG(hw, E1000_DTXCTL, reg);
-		/* Fall through */
+		fallthrough;
 	case e1000_82580:
 		/* enable replication vlan tag stripping */
 		reg = E1000_READ_REG(hw, E1000_RPLOLR);
 		reg |= E1000_RPLOLR_STRVLAN;
 		E1000_WRITE_REG(hw, E1000_RPLOLR, reg);
-		/* Fall through */
+		fallthrough;
 	case e1000_i350:
 	case e1000_i354:
 		/* none of the above registers are supported by i350 */

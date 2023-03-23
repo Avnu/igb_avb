@@ -4763,4 +4763,14 @@ static inline bool page_is_pfmemalloc(struct page __maybe_unused *page)
 #define HAVE_NETIF_NAPI_ADD_WEIGHT_REMOVED
 #endif /* 6.1.0 */
 
+#ifndef __has_attribute
+#define __GCC4_has_attribute___fallthrough__ 0
+#endif
+
+#if __has_attribute(__fallthrough__)
+#define fallthrough __attribute__((__fallthrough__))
+#else
+#define fallthrough do {} while (0)  /* fallthrough */
+#endif
+
 #endif /* _KCOMPAT_H_ */
