@@ -223,6 +223,7 @@ static void igb_ptp_systim_to_hwtstamp(struct igb_adapter *adapter,
  * PTP clock operations
  */
 
+#ifdef HAVE_PTP_ADJFREQ
 static int igb_ptp_adjfreq_82576(struct ptp_clock_info *ptp, s32 ppb)
 {
 	struct igb_adapter *igb = container_of(ptp, struct igb_adapter,
@@ -291,6 +292,48 @@ static int igb_ptp_adjfreq_82580(struct ptp_clock_info *ptp, s32 ppb)
 
 	return 0;
 }
+#else
+static int igb_ptp_adjfine_82576(struct ptp_clock_info *ptp, long scaled_ppm)
+{
+	struct igb_adapter *igb = container_of(ptp, struct igb_adapter,
+	                                       ptp_caps);
+	struct e1000_hw *hw = &igb->hw;
+	u64 incvalue;
+
+	incvalue = adjust_by_scaled_ppm(INCVALUE_82576, scaled_ppm);
+
+	E1000_WRITE_REG(hw, E1000_TIMINCA, INCPERIOD_82576
+			| (incvalue & INCVALUE_82576_MASK));
+
+	return 0;
+}
+
+static int igb_ptp_adjfine_82580(struct ptp_clock_info *ptp, long scaled_ppm)
+{
+	struct igb_adapter *igb = container_of(ptp, struct igb_adapter,
+	                                       ptp_caps);
+	struct e1000_hw *hw = &igb->hw;
+	int neg_adj = 0;
+	u64 rate;
+	u32 inca;
+
+	if (scaled_ppm < 0) {
+		neg_adj = 1;
+		scaled_ppm = -scaled_ppm;
+	}
+	rate = scaled_ppm;
+	rate <<= 13;
+	rate = div_u64(rate, 15625);
+
+	inca = rate & INCVALUE_MASK;
+	if (neg_adj)
+		inca |= ISGN;
+
+	E1000_WRITE_REG(hw, E1000_TIMINCA, inca);
+
+	return 0;
+}
+#endif /* HAVE_PTP_ADJFREQ */
 
 static int igb_ptp_adjtime_82576(struct ptp_clock_info *ptp, s64 delta)
 {
@@ -1142,7 +1185,11 @@ void igb_ptp_init(struct igb_adapter *adapter)
 		adapter->ptp_caps.max_adj = 999999881;
 		adapter->ptp_caps.n_ext_ts = 0;
 		adapter->ptp_caps.pps = 0;
+#ifdef HAVE_PTP_ADJFREQ
 		adapter->ptp_caps.adjfreq = igb_ptp_adjfreq_82576;
+#else
+		adapter->ptp_caps.adjfine = igb_ptp_adjfine_82576;
+#endif /* HAVE_PTP_ADJFREQ */
 		adapter->ptp_caps.adjtime = igb_ptp_adjtime_82576;
 #ifdef HAVE_PTP_CLOCK_INFO_GETTIME64
 		adapter->ptp_caps.gettime64 = igb_ptp_gettime64_82576;
@@ -1168,7 +1215,11 @@ void igb_ptp_init(struct igb_adapter *adapter)
 		adapter->ptp_caps.max_adj = 62499999;
 		adapter->ptp_caps.n_ext_ts = 0;
 		adapter->ptp_caps.pps = 0;
+#ifdef HAVE_PTP_ADJFREQ
 		adapter->ptp_caps.adjfreq = igb_ptp_adjfreq_82580;
+#else
+		adapter->ptp_caps.adjfine = igb_ptp_adjfine_82580;
+#endif /* HAVE_PTP_ADJFREQ */
 		adapter->ptp_caps.adjtime = igb_ptp_adjtime_82576;
 #ifdef HAVE_PTP_CLOCK_INFO_GETTIME64
 		adapter->ptp_caps.gettime64 = igb_ptp_gettime64_82576;
@@ -1208,7 +1259,11 @@ void igb_ptp_init(struct igb_adapter *adapter)
 #ifdef HAVE_PTP_1588_CLOCK_PINS
 		adapter->ptp_caps.pin_config = adapter->sdp_config;
 #endif /* HAVE_PTP_1588_CLOCK_PINS */
+#ifdef HAVE_PTP_ADJFREQ
 		adapter->ptp_caps.adjfreq = igb_ptp_adjfreq_82580;
+#else
+		adapter->ptp_caps.adjfine = igb_ptp_adjfine_82580;
+#endif /* HAVE_PTP_ADJFREQ */
 		adapter->ptp_caps.adjtime = igb_ptp_adjtime_i210;
 #ifdef HAVE_PTP_CLOCK_INFO_GETTIME64
 		adapter->ptp_caps.gettime64 = igb_ptp_gettime64_i210;
