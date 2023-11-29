@@ -3254,8 +3254,9 @@ static void igb_remove(struct pci_dev *pdev)
 	igb_ptp_stop(adapter);
 #endif /* HAVE_PTP_1588_CLOCK */
 
-	/* flush_scheduled work may reschedule our watchdog task, so
-	 * explicitly disable watchdog tasks from being rescheduled
+	/*
+	 * The watchdog timer may be rescheduled, so explicitly
+	 * disable watchdog from being rescheduled.
 	 */
 	set_bit(__IGB_DOWN, &adapter->state);
 	del_timer_sync(&adapter->watchdog_timer);
@@ -3263,7 +3264,10 @@ static void igb_remove(struct pci_dev *pdev)
 		del_timer_sync(&adapter->dma_err_timer);
 	del_timer_sync(&adapter->phy_info_timer);
 
-	flush_scheduled_work();
+	cancel_work_sync(&adapter->reset_task);
+	if (adapter->flags & IGB_FLAG_DETECT_BAD_DMA)
+		cancel_work_sync(&adapter->dma_err_task);
+	cancel_work_sync(&adapter->watchdog_task);
 
 #ifdef IGB_DCA
 	if (adapter->flags & IGB_FLAG_DCA_ENABLED) {
