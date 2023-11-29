@@ -4781,4 +4781,9 @@ static inline bool page_is_pfmemalloc(struct page __maybe_unused *page)
 #define HAVE_PTP_ADJFREQ
 #endif /* 6.2.0 */
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,6,0))
+#define pci_enable_pcie_error_reporting(pdev)
+#define pci_disable_pcie_error_reporting(pdev)
+#endif /* 6.6.0 */
+
 #endif /* _KCOMPAT_H_ */
