@@ -4795,4 +4795,8 @@ static inline void skb_frag_off_add(skb_frag_t *frag, int delta)
 #define HAVE_RXFH_PARAM
 #endif /* 6.8.0 */
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,9,0))
+#define HAVE_ETHTOOL_LINKMODE_HELPERS
+#endif /* 6.9.0 */
+
 #endif /* _KCOMPAT_H_ */
