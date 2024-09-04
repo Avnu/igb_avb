@@ -4786,4 +4786,8 @@ static inline bool page_is_pfmemalloc(struct page __maybe_unused *page)
 #define pci_disable_pcie_error_reporting(pdev)
 #endif /* 6.6.0 */
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,8,0))
+#define HAVE_RXFH_PARAM
+#endif /* 6.8.0 */
+
 #endif /* _KCOMPAT_H_ */

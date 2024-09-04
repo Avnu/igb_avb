@@ -2883,16 +2883,22 @@ static u32 igb_get_rxfh_indir_size(struct net_device *netdev)
 }
 
 #if (defined(ETHTOOL_GRSSH) && !defined(HAVE_ETHTOOL_GSRSSH))
-#ifdef HAVE_RXFH_HASHFUNC
+#ifdef HAVE_RXFH_PARAM
+static int igb_get_rxfh(struct net_device *netdev,
+                        struct ethtool_rxfh_param *rxfh)
+#elif defined(HAVE_RXFH_HASHFUNC)
 static int igb_get_rxfh(struct net_device *netdev, u32 *indir, u8 *key,
 			u8 *hfunc)
 #else
 static int igb_get_rxfh(struct net_device *netdev, u32 *indir, u8 *key)
-#endif /* HAVE_RXFH_HASHFUNC */
+#endif /* HAVE_RXFH_PARAM */
 #else
 static int igb_get_rxfh_indir(struct net_device *netdev, u32 *indir)
 #endif /* HAVE_ETHTOOL_GSRSSH */
 {
+#ifdef HAVE_RXFH_PARAM
+	u32 *indir = rxfh->indir;
+#endif
 	struct igb_adapter *adapter = netdev_priv(netdev);
 	int i;
 
@@ -2955,17 +2961,24 @@ void igb_write_rss_indir_tbl(struct igb_adapter *adapter)
 
 #ifdef HAVE_ETHTOOL_GRXFHINDIR_SIZE
 #if (defined(ETHTOOL_GRSSH) && !defined(HAVE_ETHTOOL_GSRSSH))
-#ifdef HAVE_RXFH_HASHFUNC
+#ifdef HAVE_RXFH_PARAM
+static int igb_set_rxfh(struct net_device *netdev,
+                        struct ethtool_rxfh_param *rxfh,
+                        struct netlink_ext_ack *extack)
+#elif defined(HAVE_RXFH_HASHFUNC)
 static int igb_set_rxfh(struct net_device *netdev, const u32 *indir,
 			      const u8 *key, const u8 hfunc)
 #else
 static int igb_set_rxfh(struct net_device *netdev, const u32 *indir,
 			      const u8 *key)
-#endif /* HAVE_RXFH_HASHFUNC */
+#endif /* HAVE_RXFH_PARAM */
 #else
 static int igb_set_rxfh_indir(struct net_device *netdev, const u32 *indir)
 #endif /* HAVE_ETHTOOL_GSRSSH */
 {
+#ifdef HAVE_RXFH_PARAM
+	u32 *indir = rxfh->indir;
+#endif
 	struct igb_adapter *adapter = netdev_priv(netdev);
 	struct e1000_hw *hw = &adapter->hw;
 	int i;
