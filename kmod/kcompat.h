@@ -4735,7 +4735,12 @@ static inline bool page_is_pfmemalloc(struct page __maybe_unused *page)
 #endif /* 5.2.0 */
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5,4,0))
-#define HAVE_SKB_FRAG_STRUCT
+typedef struct skb_frag_struct skb_frag_t;
+
+static inline void skb_frag_off_add(skb_frag_t *frag, int delta)
+{
+	frag->page_offset += delta;
+}
 #endif /* 5.4.0 */
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5,7,0))
