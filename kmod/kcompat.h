@@ -4799,4 +4799,10 @@ static inline void skb_frag_off_add(skb_frag_t *frag, int delta)
 #define HAVE_ETHTOOL_LINKMODE_HELPERS
 #endif /* 6.9.0 */
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6,11,0))
+#ifndef kernel_ethtool_ts_info
+#define kernel_ethtool_ts_info ethtool_ts_info
+#endif
+#endif /* 6.11.0 */
+
 #endif /* _KCOMPAT_H_ */
