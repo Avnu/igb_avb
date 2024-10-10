@@ -155,7 +155,6 @@ static u16 igb_select_queue(struct net_device *dev, struct sk_buff *skb);
 static netdev_tx_t igb_xmit_frame(struct sk_buff *skb, struct net_device *);
 static struct net_device_stats *igb_get_stats(struct net_device *);
 static int igb_change_mtu(struct net_device *, int);
-/* void igb_full_sync_mac_table(struct igb_adapter *adapter); */
 static int igb_set_mac(struct net_device *, void *);
 static void igb_set_uta(struct igb_adapter *adapter);
 static irqreturn_t igb_intr(int irq, void *);
@@ -4547,15 +4546,6 @@ int igb_write_mc_addr_list(struct net_device *netdev)
 	kfree(mta_list);
 
 	return count;
-}
-
-void igb_full_sync_mac_table(struct igb_adapter *adapter)
-{
-	struct e1000_hw *hw = &adapter->hw;
-	int i;
-
-	for (i = 0; i < hw->mac.rar_entry_count; i++)
-		igb_rar_set(adapter, i);
 }
 
 void igb_sync_mac_table(struct igb_adapter *adapter)
