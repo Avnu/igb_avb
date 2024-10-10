@@ -2645,7 +2645,7 @@ static void igb_init_mas(struct igb_adapter *adapter)
 	}
 }
 
-void igb_rar_set(struct igb_adapter *adapter, u32 index)
+static void igb_rar_set(struct igb_adapter *adapter, u32 index)
 {
 	u32 rar_low, rar_high;
 	struct e1000_hw *hw = &adapter->hw;
@@ -4552,7 +4552,7 @@ int igb_write_mc_addr_list(struct net_device *netdev)
 	return count;
 }
 
-void igb_sync_mac_table(struct igb_adapter *adapter)
+static void igb_sync_mac_table(struct igb_adapter *adapter)
 {
 	struct e1000_hw *hw = &adapter->hw;
 	int i;
@@ -5364,7 +5364,7 @@ set_itr_now:
 	}
 }
 
-void igb_tx_ctxtdesc(struct igb_ring *tx_ring, u32 vlan_macip_lens,
+static void igb_tx_ctxtdesc(struct igb_ring *tx_ring, u32 vlan_macip_lens,
 		     u32 type_tucmd, u32 mss_l4len_idx)
 {
 	struct e1000_adv_tx_context_desc *context_desc;
@@ -6564,7 +6564,7 @@ static void igb_ping_all_vfs(struct igb_adapter *adapter)
  *  current value is read, the new bit is OR'd in and the new value is
  *  written back into the register.
  **/
-void igb_mta_set(struct igb_adapter *adapter, u32 hash_value)
+static void igb_mta_set(struct igb_adapter *adapter, u32 hash_value)
 {
 	struct e1000_hw *hw = &adapter->hw;
 	u32 hash_bit, hash_reg, mta;
@@ -7330,7 +7330,7 @@ static irqreturn_t igb_intr(int irq, void *data)
 	return IRQ_HANDLED;
 }
 
-void igb_ring_irq_enable(struct igb_q_vector *q_vector)
+static void igb_ring_irq_enable(struct igb_q_vector *q_vector)
 {
 	struct igb_adapter *adapter = q_vector->adapter;
 	struct e1000_hw *hw = &adapter->hw;
