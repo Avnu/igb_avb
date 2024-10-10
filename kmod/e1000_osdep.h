@@ -69,8 +69,8 @@
 #define DEBUGOUT(S) pr_debug(S)
 #define DEBUGOUT1(S, A...) pr_debug(S, ## A)
 #else
-#define DEBUGOUT(S)
-#define DEBUGOUT1(S, A...)
+#define DEBUGOUT(S) do { } while (0)
+#define DEBUGOUT1(S, A...) do { } while (0)
 #endif
 
 #ifdef DEBUG_FUNC
