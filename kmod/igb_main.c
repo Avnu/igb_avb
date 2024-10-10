@@ -1987,7 +1987,7 @@ void igb_reinit_locked(struct igb_adapter *adapter)
  *
  * @adapter: adapter struct
  **/
-void igb_enable_mas(struct igb_adapter *adapter)
+static void igb_enable_mas(struct igb_adapter *adapter)
 {
 	struct e1000_hw *hw = &adapter->hw;
 	u32 connsw;
@@ -2108,6 +2108,10 @@ void igb_reset(struct igb_adapter *adapter)
 		igb_check_options(adapter);
 		e1000_get_bus_info(hw);
 		adapter->flags &= ~IGB_FLAG_MEDIA_RESET;
+	}
+	if ((mac->type == e1000_82575) &&
+	    (adapter->flags & IGB_FLAG_MAS_ENABLE)) {
+		igb_enable_mas(adapter);
 	}
 	if (e1000_init_hw(hw))
 		dev_err(pci_dev_to_dev(pdev), "Hardware Error\n");
