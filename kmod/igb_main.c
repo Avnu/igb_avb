@@ -78,11 +78,7 @@
 #define DRV_HW_PERF
 #define VERSION_SUFFIX "_AVB"
 
-#define MAJ 5
-#define MIN 3
-#define BUILD 2
-#define DRV_VERSION __stringify(MAJ) "." __stringify(MIN) "."\
-	__stringify(BUILD) VERSION_SUFFIX DRV_DEBUG DRV_HW_PERF
+#define DRV_VERSION "5.3.2" VERSION_SUFFIX DRV_DEBUG DRV_HW_PERF
 
 char igb_driver_name[] = "igb_avb";
 char igb_driver_version[] = DRV_VERSION;
