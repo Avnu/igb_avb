@@ -4805,4 +4805,8 @@ static inline void skb_frag_off_add(skb_frag_t *frag, int delta)
 #endif
 #endif /* 6.11.0 */
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(6,12,0))
+#define HAVE_FS_NO_LLSEEK
+#endif /* 6.12.0 */
+
 #endif /* _KCOMPAT_H_ */

@@ -312,7 +312,9 @@ static void igb_init_dmac(struct igb_adapter *adapter, u32 pba);
 /* user-mode IO API registrations */
 static struct file_operations igb_fops = {
 		.owner   = THIS_MODULE,
+#ifdef HAVE_FS_NO_LLSEEK
 		.llseek  = no_llseek,
+#endif
 		.read	= igb_read,
 		.write   = igb_write,
 		.poll	= igb_pollfd,
