@@ -10677,7 +10677,7 @@ static long igb_mapbuf(struct file *file, void __user *arg, int ring)
 		igb_priv->uring_tx_init |= (1 << req.queue);
 
 		if(ring == IGB_IOCTL_MAP_TX_RING)	
-			req.pa = virt_to_phys(adapter->tx_ring[req.queue]->desc);
+			req.pa = slow_virt_to_phys(adapter->tx_ring[req.queue]->desc);
 
 		req.physaddr = adapter->tx_ring[req.queue]->dma;
 		req.mmap_size = adapter->tx_ring[req.queue]->size;
@@ -10711,7 +10711,7 @@ static long igb_mapbuf(struct file *file, void __user *arg, int ring)
 		igb_priv->uring_rx_init |= (1 << req.queue);
 		
 		if(ring == IGB_IOCTL_MAP_RX_RING)	
-			req.pa = virt_to_phys(adapter->rx_ring[req.queue]->desc);
+			req.pa = slow_virt_to_phys(adapter->rx_ring[req.queue]->desc);
 
 		req.physaddr = adapter->rx_ring[req.queue]->dma;
 		req.mmap_size = adapter->rx_ring[req.queue]->size;
