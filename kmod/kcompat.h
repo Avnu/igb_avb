@@ -4188,6 +4188,9 @@ extern int __kc_netif_set_xps_queue(struct net_device *, struct cpumask *, u16);
 extern u16 __kc_netdev_pick_tx(struct net_device *dev, struct sk_buff *skb);
 #define __netdev_pick_tx __kc_netdev_pick_tx
 #endif /* HAVE_NETDEV_SELECT_QUEUE */
+
+#define slow_virt_to_phys(virt_addr) virt_to_phys(virt_addr)
+
 #else
 #define HAVE_BRIDGE_FILTER
 #define HAVE_FDB_DEL_NLATTR
