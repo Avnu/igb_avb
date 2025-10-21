@@ -1915,7 +1915,7 @@ void igb_down(struct igb_adapter *adapter)
        	and watchdog - performing required actions
        	before altering the adapter state and registers
      	*/
-    	del_timer_sync(&adapter->watchdog_timer);
+    	timer_delete_sync(&adapter->watchdog_timer);
     	cancel_work_sync(&adapter->watchdog_task);    
 
 	/* signal that we're down so the interrupt handler does not
@@ -1947,8 +1947,8 @@ void igb_down(struct igb_adapter *adapter)
 	adapter->flags &= ~IGB_FLAG_NEED_LINK_UPDATE;
 	
 	if (adapter->flags & IGB_FLAG_DETECT_BAD_DMA)
-		del_timer_sync(&adapter->dma_err_timer);
-	del_timer_sync(&adapter->phy_info_timer);
+		timer_delete_sync(&adapter->dma_err_timer);
+	timer_delete_sync(&adapter->phy_info_timer);
 
 	/* record the stats before reset*/
 	igb_update_stats(adapter);
@@ -3263,10 +3263,10 @@ static void igb_remove(struct pci_dev *pdev)
 	 * disable watchdog from being rescheduled.
 	 */
 	set_bit(__IGB_DOWN, &adapter->state);
-	del_timer_sync(&adapter->watchdog_timer);
+	timer_delete_sync(&adapter->watchdog_timer);
 	if (adapter->flags & IGB_FLAG_DETECT_BAD_DMA)
-		del_timer_sync(&adapter->dma_err_timer);
-	del_timer_sync(&adapter->phy_info_timer);
+		timer_delete_sync(&adapter->dma_err_timer);
+	timer_delete_sync(&adapter->phy_info_timer);
 
 	cancel_work_sync(&adapter->reset_task);
 	if (adapter->flags & IGB_FLAG_DETECT_BAD_DMA)
