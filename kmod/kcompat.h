@@ -4817,5 +4817,9 @@ static inline void skb_frag_off_add(skb_frag_t *frag, int delta)
 #define timer_delete_sync(timer) del_timer_sync(timer)
 #endif /* 6.15.0 */
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,17,0)
+#define HAVE_CYCLECOUNTER_PARAM_CONST
+#endif /* 6.17.0 */
+
 
 #endif /* _KCOMPAT_H_ */
